@@ -1,6 +1,6 @@
 {
   "name": "@gettemp-email/testing",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Disposable inbox helpers for automated email verification tests.",
   "type": "module",
   "license": "MIT",
@@ -33,6 +33,7 @@
   "files": [
     "src/",
     "examples/",
+    "schemas/",
     "docs/ROADMAP.md",
     "integration-manifest.json",
     "CHANGELOG.md",
@@ -43,8 +44,12 @@
   ],
   "scripts": {
     "test": "node --test",
+    "test:live": "node scripts/live-playwright-controlled-flow.mjs",
     "test:coverage": "node --test --experimental-test-coverage",
-    "check": "node --check src/cli.js && node --check src/client.js && node --check src/helpers.js && node --check src/init.js && npm test",
+    "check": "node --check src/cli.js && node --check src/client.js && node --check src/helpers.js && node --check src/init.js && node --check scripts/live-playwright-controlled-flow.mjs && npm test",
     "prepack": "npm run check"
+  },
+  "devDependencies": {
+    "playwright-core": "1.55.0"
   }
 }

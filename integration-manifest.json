@@ -4,7 +4,7 @@
   "documentation": "https://gettemp.email/guides/test-email-verification-playwright/",
   "source": "https://github.com/sefara/gettemp-email-testing",
   "package": "@gettemp-email/testing",
-  "install": "npm install --save-dev github:sefara/gettemp-email-testing#v0.1.0",
+  "install": "npm install --save-dev github:sefara/gettemp-email-testing#v0.2.0",
   "init": "npx gettemp-email-testing init",
   "doctor": "npx gettemp-email-testing doctor",
   "mcp": {
@@ -12,7 +12,13 @@
     "endpoint": "https://api.gettemp.email/mcp",
     "authentication": "human-authorized bearer credential"
   },
-  "supported": ["playwright"],
+  "python": {
+    "package": "gettemp-email-testing",
+    "install": "pip install git+https://github.com/sefara/gettemp-email-testing.git@v0.2.0#subdirectory=python",
+    "doctor": "gettemp-email-doctor"
+  },
+  "contracts": "https://github.com/sefara/gettemp-email-testing/tree/v0.2.0/schemas",
+  "supported": ["playwright", "pytest"],
   "humanSteps": [
     "account registration or sign-in",
     "email verification",

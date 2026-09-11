@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gettemp.email/contracts/testing/message-summary.v1.schema.json",
+  "title": "Message summary",
+  "type": "object",
+  "required": ["id", "sender_label", "subject", "received_at"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "sender_label": { "type": "string", "maxLength": 320 },
+    "subject": { "type": "string", "maxLength": 998 },
+    "received_at": { "type": "string", "format": "date-time" },
+    "has_otp": { "type": "boolean" },
+    "has_verification_link": { "type": "boolean" }
+  },
+  "additionalProperties": true
+}

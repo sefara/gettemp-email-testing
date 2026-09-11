@@ -8,7 +8,8 @@ function validOrigin(value) {
   const url = new URL(value);
   if (url.username || url.password || url.search || url.hash || url.pathname !== '/')
     throw new GetTempError('invalid_input', 'apiOrigin must contain only a secure origin.');
-  if (url.protocol !== 'https:' && !['localhost', '127.0.0.1', '::1'].includes(url.hostname))
+  const hostname = url.hostname.replace(/^\[|\]$/g, '').toLowerCase();
+  if (url.protocol !== 'https:' && !['localhost', '127.0.0.1', '::1'].includes(hostname))
     throw new GetTempError('invalid_input', 'apiOrigin must use HTTPS.');
   return url.origin;
 }
@@ -62,7 +63,8 @@ export class GetTempClient {
     let code = 'request_failed';
     try {
       const body = await response.json();
-      if (typeof body?.error === 'string') code = body.error;
+      if (typeof body?.error === 'string' && /^[a-z][a-z0-9_]{1,63}$/.test(body.error))
+        code = body.error;
     } catch {
       // Never include an upstream body in errors: it may contain sensitive mail data.
     }

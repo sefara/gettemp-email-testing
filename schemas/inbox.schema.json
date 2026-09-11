@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gettemp.email/contracts/testing/inbox.v1.schema.json",
+  "title": "Temporary inbox",
+  "type": "object",
+  "required": ["inboxId", "address", "accessToken", "expiresAt"],
+  "properties": {
+    "inboxId": { "type": "string", "format": "uuid" },
+    "address": { "type": "string", "format": "email", "maxLength": 320 },
+    "accessToken": { "type": "string", "minLength": 32, "maxLength": 256 },
+    "expiresAt": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": true
+}

@@ -32,6 +32,13 @@ test('localhost HTTP is allowed only when it is the exact expected host', () => 
   );
 });
 
+test('IPv6 loopback HTTP accepts normalized exact host only', () => {
+  assert.equal(
+    exactHostUrl('http://[::1]:3000/verify', { expectedHostname: '::1' }),
+    'http://[::1]:3000/verify',
+  );
+});
+
 test('verificationUrl returns one classified, exact-host link', () => {
   assert.equal(
     verificationUrl(
