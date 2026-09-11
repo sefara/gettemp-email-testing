@@ -3,7 +3,11 @@ import { GetTempError } from './errors.js';
 const localHosts = new Set(['127.0.0.1', 'localhost', '::1']);
 
 function normalizedHost(value) {
-  return String(value ?? '').trim().toLowerCase().replace(/\.$/, '');
+  return String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/^\[|\]$/g, '')
+    .replace(/\.$/, '');
 }
 
 export function exactHostUrl(href, options = {}) {

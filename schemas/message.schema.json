@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gettemp.email/contracts/testing/message.v1.schema.json",
+  "title": "Sanitized message",
+  "allOf": [
+    { "$ref": "message-summary.schema.json" },
+    {
+      "type": "object",
+      "properties": {
+        "text_body": { "type": ["string", "null"] },
+        "sanitized_html": { "type": ["string", "null"] },
+        "otp_candidates": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "required": ["value"],
+            "properties": {
+              "value": { "type": "string", "maxLength": 32 },
+              "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+            },
+            "additionalProperties": true
+          }
+        },
+        "safe_links": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "required": ["href", "classification"],
+            "properties": {
+              "href": { "type": "string", "format": "uri", "maxLength": 4096 },
+              "classification": { "type": "string", "maxLength": 64 }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    }
+  ]
+}

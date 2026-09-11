@@ -7,9 +7,9 @@ The connector creates a short-lived inbox through the authenticated Developer AP
 expected message, exposes only sanitized message fields, validates verification links against an
 exact hostname and deletes the inbox from test teardown. It cannot send, reply to or forward email.
 
-> **Early release:** the JavaScript core and Playwright adapter are available from this repository.
-> The npm package name is reserved in the manifest but is not claimed as published until an npm
-> release is announced here.
+> **Early release:** the JavaScript/Playwright and Python/pytest source packages are available from
+> this repository. The npm and PyPI names are reserved in the manifest but are not claimed as
+> published until their registry releases are announced here.
 
 ## Requirements
 
@@ -21,7 +21,7 @@ exact hostname and deletes the inbox from test teardown. It cannot send, reply t
 ## Install from GitHub
 
 ```bash
-npm install --save-dev github:sefara/gettemp-email-testing#v0.1.0
+npm install --save-dev github:sefara/gettemp-email-testing#v0.2.0
 ```
 
 Keep the key in your local or CI secret store:
@@ -48,8 +48,8 @@ npx gettemp-email-testing init --write
 ```
 
 The command detects Playwright, prints an explicit file plan, never overwrites an existing file and
-generates a skipped example. Cypress, Vitest/Jest, pytest and Selenium adapters are roadmap items;
-the CLI fails clearly instead of pretending they are supported.
+generates a skipped example. Cypress, Vitest/Jest and Selenium adapters are roadmap items; the CLI
+fails clearly instead of pretending they are supported.
 
 ## Connectivity check
 
@@ -107,6 +107,38 @@ await client.withInbox(async (inbox) => {
 }, { ttlMinutes: 5 });
 ```
 
+## pytest example
+
+Install the Python package directly from the same tagged repository release:
+
+```bash
+pip install "gettemp-email-testing[pytest] @ git+https://github.com/sefara/gettemp-email-testing.git@v0.2.0#subdirectory=python"
+```
+
+The installed plugin exposes `gettemp_client` and `gettemp_inbox`. The inbox fixture has a five-minute
+TTL and unconditional teardown cleanup:
+
+```python
+from gettemp_email_testing import verification_url
+
+
+def test_email_verification(page, gettemp_client, gettemp_inbox):
+    page.goto("https://your-app.example/register")
+    page.get_by_label("Email").fill(gettemp_inbox["address"])
+    page.get_by_role("button", name="Sign up").click()
+
+    summary = gettemp_client.wait_for_message(
+        gettemp_inbox, subject_includes="Verify", timeout_seconds=45
+    )
+    message = gettemp_client.read_message(gettemp_inbox, summary["id"])
+    page.goto(
+        verification_url(message, expected_hostname="your-app.example")
+    )
+```
+
+The Python package has no runtime dependencies or telemetry. Run its redacted production diagnostic
+with `gettemp-email-doctor`.
+
 ## MCP for coding agents
 
 Print the generic, secret-free Streamable HTTP template:
@@ -137,7 +169,8 @@ of terms and payment remain visible human actions.
   you are not authorized to test.
 
 See [SECURITY.md](SECURITY.md) for vulnerability reporting and [ROADMAP.md](docs/ROADMAP.md) for
-planned adapters. Product documentation and policies remain canonical at
+planned adapters. Shared versioned response contracts are in [schemas](schemas/). Product
+documentation and policies remain canonical at
 [gettemp.email](https://gettemp.email/).
 
 ## Ownership and license

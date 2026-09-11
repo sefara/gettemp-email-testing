@@ -6,4 +6,12 @@ coverage/
 playwright-report/
 test-results/
 *.tgz
+.venv*/
+.pytest_cache/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.smoke/
 .DS_Store

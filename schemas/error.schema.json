@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gettemp.email/contracts/testing/error.v1.schema.json",
+  "title": "Redacted connector error",
+  "type": "object",
+  "required": ["category", "message"],
+  "properties": {
+    "category": { "type": "string", "pattern": "^[a-z][a-z0-9_]{1,63}$" },
+    "message": { "type": "string", "maxLength": 256 },
+    "status": { "type": ["integer", "null"], "minimum": 100, "maximum": 599 },
+    "retryAfterSeconds": { "type": ["number", "null"], "minimum": 0 }
+  },
+  "additionalProperties": false
+}

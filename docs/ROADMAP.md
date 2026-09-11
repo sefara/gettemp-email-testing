@@ -9,21 +9,24 @@
 - [x] Dry-run-first, idempotent project initialization.
 - [x] Redacted status/create/delete doctor.
 - [x] Generic secret-free MCP configuration template.
+- [x] Versioned JSON contracts shared by JavaScript and Python.
 - [ ] Controlled end-to-end test with a project-owned sender.
 - [ ] npm publication and signed/checksummed release artifact.
 - [ ] Automatic CI after GitHub Actions capacity returns.
 
-## P1 — common JavaScript test runners
+## P1 — common test runners
 
-- Cypress adapter with task/command teardown.
-- Vitest and Jest service-test fixtures.
-- npm, pnpm, Yarn and Bun detection.
-- Tested client-specific MCP configuration writers.
-- Compatibility matrix for the current and previous supported engine versions.
+- [x] Python client and pytest fixture with deterministic teardown.
+- [x] pytest verification-link example and redacted doctor.
+- [ ] Controlled pytest E2E against a project-owned sender.
+- [ ] Cypress adapter with task/command teardown.
+- [ ] Vitest and Jest service-test fixtures.
+- [ ] npm, pnpm, Yarn and Bun detection.
+- [ ] Tested client-specific MCP configuration writers.
+- [ ] Compatibility matrix for the current and previous supported engine versions.
 
 ## P2 — broader ecosystem
 
-- pytest fixture after JavaScript error semantics stabilize.
 - Generated Java and .NET thin clients for Selenium workflows.
 - Short-lived browser/device authorization so the CLI never asks users to copy a long-lived key.
 - Published compatibility, deprecation and integration-health policies.

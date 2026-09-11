@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gettemp.email/contracts/testing/doctor.v1.schema.json",
+  "title": "Redacted doctor result",
+  "type": "object",
+  "required": ["ok", "status", "plan"],
+  "properties": {
+    "ok": { "const": true },
+    "status": { "enum": ["authenticated", "create_delete_passed"] },
+    "plan": { "type": "string", "enum": ["developer"] }
+  },
+  "additionalProperties": false
+}

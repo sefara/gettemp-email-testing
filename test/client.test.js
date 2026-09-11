@@ -44,6 +44,18 @@ test('request errors expose category and status but never response body', async 
   });
 });
 
+test('untrusted server error categories cannot become diagnostic output', async () => {
+  const client = new GetTempClient({
+    apiKey: 'gte_live_test_value',
+    fetch: async () => json({ error: 'secret value from body' }, 500),
+  });
+  await assert.rejects(client.status(), (error) => {
+    assert.equal(error.category, 'request_failed');
+    assert.doesNotMatch(error.message, /secret value/);
+    return true;
+  });
+});
+
 test('withInbox always deletes the inbox after a failed assertion', async () => {
   const methods = [];
   const client = new GetTempClient({
