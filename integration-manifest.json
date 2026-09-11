@@ -1,0 +1,24 @@
+{
+  "schema": "gettemp-testing-integration.v1",
+  "status": "early-release",
+  "documentation": "https://gettemp.email/guides/test-email-verification-playwright/",
+  "source": "https://github.com/sefara/gettemp-email-testing",
+  "package": "@gettemp-email/testing",
+  "install": "npm install --save-dev github:sefara/gettemp-email-testing#v0.1.0",
+  "init": "npx gettemp-email-testing init",
+  "doctor": "npx gettemp-email-testing doctor",
+  "mcp": {
+    "transport": "streamable-http",
+    "endpoint": "https://api.gettemp.email/mcp",
+    "authentication": "human-authorized bearer credential"
+  },
+  "supported": ["playwright"],
+  "humanSteps": [
+    "account registration or sign-in",
+    "email verification",
+    "current terms acceptance",
+    "plan selection and payment when required",
+    "API key placement in a protected secret store"
+  ],
+  "telemetry": "none"
+}

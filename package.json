@@ -1,0 +1,50 @@
+{
+  "name": "@gettemp-email/testing",
+  "version": "0.1.0",
+  "description": "Disposable inbox helpers for automated email verification tests.",
+  "type": "module",
+  "license": "MIT",
+  "author": "KOOL4 Solutions s. r. o.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sefara/gettemp-email-testing.git"
+  },
+  "homepage": "https://gettemp.email/guides/test-email-verification-playwright/",
+  "bugs": {
+    "url": "https://github.com/sefara/gettemp-email-testing/issues"
+  },
+  "keywords": [
+    "email-testing",
+    "playwright",
+    "temporary-email",
+    "mcp",
+    "verification"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "gettemp-email-testing": "./src/cli.js"
+  },
+  "exports": {
+    ".": "./src/index.js",
+    "./playwright": "./src/playwright.js"
+  },
+  "files": [
+    "src/",
+    "examples/",
+    "docs/ROADMAP.md",
+    "integration-manifest.json",
+    "CHANGELOG.md",
+    "README.md",
+    "LICENSE",
+    "SECURITY.md",
+    "TRADEMARKS.md"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "test:coverage": "node --test --experimental-test-coverage",
+    "check": "node --check src/cli.js && node --check src/client.js && node --check src/helpers.js && node --check src/init.js && npm test",
+    "prepack": "npm run check"
+  }
+}

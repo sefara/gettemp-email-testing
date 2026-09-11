@@ -1,0 +1,9 @@
+node_modules/
+coverage/
+.env
+.env.*
+!.env.example
+playwright-report/
+test-results/
+*.tgz
+.DS_Store
