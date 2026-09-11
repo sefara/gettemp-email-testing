@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Add a top-level, copy-ready pytest + Playwright example for easier Python discovery.
+- Add a secretless PyPI Trusted Publishing workflow gated by a final GitHub release and the protected
+  `pypi` environment.
+- Declare the Python registry state explicitly without claiming an unpublished PyPI release.
+
 ## 0.2.0 — 2026-09-11
 
 - Add versioned JSON contracts shared by JavaScript and Python integrations.

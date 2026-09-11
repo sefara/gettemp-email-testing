@@ -137,7 +137,9 @@ def test_email_verification(page, gettemp_client, gettemp_inbox):
 ```
 
 The Python package has no runtime dependencies or telemetry. Run its redacted production diagnostic
-with `gettemp-email-doctor`.
+with `gettemp-email-doctor`. A complete copy-ready project lives in
+[`examples/pytest`](examples/pytest/); it includes the browser assertion and skips safely until an
+authorized `TARGET_APP_URL` is supplied.
 
 ## MCP for coding agents
 
