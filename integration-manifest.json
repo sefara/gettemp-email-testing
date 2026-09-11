@@ -15,7 +15,11 @@
   "python": {
     "package": "gettemp-email-testing",
     "install": "pip install git+https://github.com/sefara/gettemp-email-testing.git@v0.2.0#subdirectory=python",
-    "doctor": "gettemp-email-doctor"
+    "doctor": "gettemp-email-doctor",
+    "source": "https://github.com/sefara/gettemp-email-testing/tree/v0.2.0/python",
+    "example": "https://github.com/sefara/gettemp-email-testing/tree/main/examples/pytest",
+    "registry": "pypi",
+    "registryStatus": "not-published"
   },
   "contracts": "https://github.com/sefara/gettemp-email-testing/tree/v0.2.0/schemas",
   "supported": ["playwright", "pytest"],
