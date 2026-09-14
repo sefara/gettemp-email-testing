@@ -1,4 +1,5 @@
 from gettemp_email_testing import verification_url
+from playwright.sync_api import expect
 
 
 def test_email_verification(page, gettemp_client, gettemp_inbox):
@@ -17,3 +18,6 @@ def test_email_verification(page, gettemp_client, gettemp_inbox):
         expected_path="/verify",
     )
     page.goto(href)
+    expect(page.get_by_role("heading", name="Account verified")).to_be_visible()
+    # Adapt to the identity returned by server verification, not an echoed form value.
+    expect(page.get_by_test_id("verified-email")).to_have_text(gettemp_inbox["address"])

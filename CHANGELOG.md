@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Prepare patch 0.2.1 (not published): await Playwright response bodies, handle empty 204/205/304
+  responses and dispose buffered API responses. Preserve existing exports and method signatures.
+- Bound requests and polling, respect aborts, redact malformed JSON errors and reject credentials
+  embedded in verification URLs. Keep a fallback for Node 20 versions without AbortSignal.any.
+- Fix the executable and generated Playwright examples to assert server-backed account identity,
+  expected origin/path and post-navigation origin with private browser artifacts disabled.
+- Add real APIRequestContext regressions and `npm run test:browser` for synthetic browser checks.
+  Pin the test tooling to patched Playwright 1.55.1 and exclude Python bytecode from npm archives.
+- Add identity assertions to Python examples. No live REST/mail observation is claimed by this patch.
+
 - Add a top-level, copy-ready pytest + Playwright example for easier Python discovery.
 - Add a secretless PyPI Trusted Publishing workflow gated by a final GitHub release and the protected
   `pypi` environment.

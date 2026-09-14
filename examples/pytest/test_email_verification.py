@@ -17,7 +17,7 @@ def test_new_user_can_verify_email(
 ) -> None:
     """Run only against an application you own or are explicitly authorized to test."""
     target = urlparse(TARGET_APP_URL)
-    if target.scheme != "https" or not target.hostname:
+    if target.scheme != "https" or not target.hostname or target.username or target.password:
         pytest.fail("TARGET_APP_URL must be an absolute HTTPS URL")
 
     page.goto(f"{TARGET_APP_URL.rstrip('/')}/register")
@@ -37,5 +37,17 @@ def test_new_user_can_verify_email(
         expected_path="/verify",
     )
 
+    destination = urlparse(href)
+    if (destination.scheme, destination.hostname, destination.port or 443) != (
+        target.scheme, target.hostname, target.port or 443
+    ) or destination.path != "/verify":
+        pytest.fail("Verification destination did not match the application")
     page.goto(href)
+    final = urlparse(page.url)
+    if (final.scheme, final.hostname, final.port or 443) != (
+        target.scheme, target.hostname, target.port or 443
+    ):
+        pytest.fail("Verification redirected outside the expected origin")
     expect(page.get_by_role("heading", name="Account verified")).to_be_visible()
+    # Adapt to the identity returned by server verification, not an echoed form value.
+    expect(page.get_by_test_id("verified-email")).to_have_text(gettemp_inbox["address"])

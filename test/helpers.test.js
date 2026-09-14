@@ -24,11 +24,15 @@ test('exactHostUrl rejects lookalike, subdomain and insecure URLs', () => {
 
 test('localhost HTTP is allowed only when it is the exact expected host', () => {
   assert.equal(
-    exactHostUrl('http://127.0.0.1:3000/verify', { expectedHostname: '127.0.0.1' }),
+    exactHostUrl('http://127.0.0.1:3000/verify', {
+      expectedHostname: '127.0.0.1',
+    }),
     'http://127.0.0.1:3000/verify',
   );
   assert.throws(() =>
-    exactHostUrl('http://127.0.0.1:3000/verify', { expectedHostname: 'localhost' }),
+    exactHostUrl('http://127.0.0.1:3000/verify', {
+      expectedHostname: 'localhost',
+    }),
   );
 });
 
@@ -44,7 +48,10 @@ test('verificationUrl returns one classified, exact-host link', () => {
     verificationUrl(
       {
         safe_links: [
-          { classification: 'verification-likely', href: 'https://evil.test/verify' },
+          {
+            classification: 'verification-likely',
+            href: 'https://evil.test/verify',
+          },
           {
             classification: 'verification-likely',
             href: 'https://accounts.example.test/verify',
@@ -63,26 +70,50 @@ test('verificationUrl and otp fail closed on ambiguity', () => {
       verificationUrl(
         {
           safe_links: [
-            { classification: 'verification-likely', href: 'https://example.test/a' },
-            { classification: 'verification-likely', href: 'https://example.test/b' },
+            {
+              classification: 'verification-likely',
+              href: 'https://example.test/a',
+            },
+            {
+              classification: 'verification-likely',
+              href: 'https://example.test/b',
+            },
           ],
         },
         { expectedHostname: 'example.test' },
       ),
     { category: 'ambiguous_verification_link' },
   );
-  assert.throws(
-    () => otp({ otp_candidates: [{ value: '123456' }, { value: '654321' }] }),
-    { category: 'ambiguous_otp' },
-  );
+  assert.throws(() => otp({ otp_candidates: [{ value: '123456' }, { value: '654321' }] }), {
+    category: 'ambiguous_otp',
+  });
 });
 
 test('otp supports an exact length constraint', () => {
   assert.equal(
-    otp(
-      { otp_candidates: [{ value: '1234' }, { value: '123456' }] },
-      { expectedLength: 6 },
-    ),
+    otp({ otp_candidates: [{ value: '1234' }, { value: '123456' }] }, { expectedLength: 6 }),
     '123456',
+  );
+});
+
+test('verification helpers reject embedded credentials and preserve invalid-input errors', () => {
+  assert.throws(
+    () =>
+      exactHostUrl('https://user:password@example.test/verify', {
+        expectedHostname: 'example.test',
+      }),
+    { category: 'unsafe_verification_url' },
+  );
+  assert.throws(
+    () =>
+      verificationUrl({
+        safe_links: [
+          {
+            classification: 'verification-likely',
+            href: 'https://example.test/verify',
+          },
+        ],
+      }),
+    { category: 'invalid_input' },
   );
 });

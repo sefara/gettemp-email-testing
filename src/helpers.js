@@ -12,8 +12,7 @@ function normalizedHost(value) {
 
 export function exactHostUrl(href, options = {}) {
   const expectedHostname = normalizedHost(options.expectedHostname);
-  if (!expectedHostname)
-    throw new GetTempError('invalid_input', 'expectedHostname is required.');
+  if (!expectedHostname) throw new GetTempError('invalid_input', 'expectedHostname is required.');
 
   let url;
   try {
@@ -23,6 +22,11 @@ export function exactHostUrl(href, options = {}) {
   }
 
   const actualHostname = normalizedHost(url.hostname);
+  if (url.username || url.password)
+    throw new GetTempError(
+      'unsafe_verification_url',
+      'Verification links cannot contain credentials.',
+    );
   const isAllowedLocalHttp = url.protocol === 'http:' && localHosts.has(actualHostname);
   if (url.protocol !== 'https:' && !isAllowedLocalHttp)
     throw new GetTempError(
@@ -50,8 +54,11 @@ export function verificationUrl(message, options = {}) {
     try {
       verified.push(exactHostUrl(candidate.href, options));
     } catch (error) {
-      if (error?.category === 'unexpected_hostname' || error?.category === 'unexpected_path') continue;
+      if (error?.category === 'unexpected_hostname' || error?.category === 'unexpected_path')
+        continue;
       if (error?.category === 'unsafe_verification_url') continue;
+      if (error?.category === 'invalid_verification_url') continue;
+      throw error;
     }
   }
   const unique = [...new Set(verified)];

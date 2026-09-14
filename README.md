@@ -85,6 +85,8 @@ test('verifies an email address', async ({ page, request }) => {
 
     await page.goto(href);
     await expect(page).toHaveURL(/verified/);
+    // Assert identity returned by server verification, not an echoed form value.
+    await expect(page.getByTestId('verified-email')).toHaveText(inbox.address);
   }, { ttlMinutes: 5 });
 });
 ```
@@ -120,6 +122,7 @@ TTL and unconditional teardown cleanup:
 
 ```python
 from gettemp_email_testing import verification_url
+from playwright.sync_api import expect
 
 
 def test_email_verification(page, gettemp_client, gettemp_inbox):
@@ -134,6 +137,8 @@ def test_email_verification(page, gettemp_client, gettemp_inbox):
     page.goto(
         verification_url(message, expected_hostname="your-app.example")
     )
+    # Adapt to identity returned by server-side verification.
+    expect(page.get_by_test_id("verified-email")).to_have_text(gettemp_inbox["address"])
 ```
 
 The Python package has no runtime dependencies or telemetry. Run its redacted production diagnostic

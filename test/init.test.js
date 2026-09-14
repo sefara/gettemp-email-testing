@@ -30,6 +30,16 @@ test('init writes no secret and is idempotent', async (t) => {
   const env = await readFile(path.join(directory, '.env.gettemp-email.example'), 'utf8');
   assert.match(env, /REPLACE_WITH_YOUR_KEY/);
   assert.doesNotMatch(env, /gte_live_[A-Za-z0-9_-]{32,}/);
+  assert.match(env, /TARGET_APP_URL=/);
+  const example = await readFile(
+    path.join(directory, 'tests/email-verification.gettemp.example.spec.js'),
+    'utf8',
+  );
+  assert.match(example, /getByTestId\('verified-email'\)\)\.toHaveText\(inbox.address\)/);
+  assert.match(example, /destination.origin !== target.origin/);
+  assert.match(example, /trace: 'off'/);
+  assert.match(example, /test.skip\(/);
+  assert.match(example, /from '.\/helpers\/gettemp-email.js'/);
   const second = await initProject({ directory, write: true });
   assert.ok(second.files.every((file) => file.action === 'skip_existing'));
 });

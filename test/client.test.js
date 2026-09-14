@@ -88,7 +88,11 @@ test('doctor returns only a redacted result and performs status/create/delete', 
     },
   });
   const result = await client.doctor();
-  assert.deepEqual(result, { ok: true, status: 'create_delete_passed', plan: 'developer' });
+  assert.deepEqual(result, {
+    ok: true,
+    status: 'create_delete_passed',
+    plan: 'developer',
+  });
   assert.doesNotMatch(JSON.stringify(result), /secret|sample@|11111111/);
   assert.deepEqual(paths, [
     ['/v1/developer/status', 'GET'],
@@ -105,4 +109,58 @@ test('apiOrigin rejects credentials, paths and insecure remote HTTP', () => {
   ]) {
     assert.throws(() => new GetTempClient({ apiKey: 'x', apiOrigin, fetch }));
   }
+});
+
+test('malformed successful JSON is redacted instead of leaking response fragments', async () => {
+  const client = new GetTempClient({
+    apiKey: 'synthetic',
+    fetch: async () => new Response('PRIVATE_MAIL_FRAGMENT'),
+  });
+  await assert.rejects(client.status(), (error) => {
+    assert.equal(error.category, 'invalid_response');
+    assert.doesNotMatch(error.message, /PRIVATE_MAIL_FRAGMENT/);
+    return true;
+  });
+});
+
+test('poll deadline also bounds a stalled fetch request', async () => {
+  const client = new GetTempClient({
+    apiKey: 'synthetic',
+    fetch: async (_, { signal }) =>
+      new Promise((_, reject) => {
+        signal.addEventListener('abort', () => reject(signal.reason), {
+          once: true,
+        });
+      }),
+  });
+  // Keep the event loop alive while testing AbortSignal.timeout (its timer is unref'd).
+  const keepAlive = setInterval(() => {}, 100);
+  try {
+    const started = Date.now();
+    await assert.rejects(client.waitForMessage(inbox, { timeoutMs: 40 }), {
+      category: 'message_timeout',
+    });
+    assert.ok(Date.now() - started < 1_000);
+  } finally {
+    clearInterval(keepAlive);
+  }
+});
+
+test('caller abort interrupts the polling sleep', async () => {
+  const controller = new AbortController();
+  const client = new GetTempClient({
+    apiKey: 'synthetic',
+    fetch: async () => {
+      setTimeout(() => controller.abort(), 10);
+      return json([]);
+    },
+  });
+  const started = Date.now();
+  await assert.rejects(
+    client.waitForMessage(inbox, {
+      signal: controller.signal,
+      intervalMs: 5_000,
+    }),
+  );
+  assert.ok(Date.now() - started < 1_000);
 });

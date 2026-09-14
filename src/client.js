@@ -1,8 +1,8 @@
 import { GetTempError, asGetTempError } from './errors.js';
+import { setTimeout as sleep } from 'node:timers/promises';
+import { anySignal } from './signals.js';
 
 export const DEFAULT_API_ORIGIN = 'https://api.gettemp.email';
-
-const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 function validOrigin(value) {
   const url = new URL(value);
@@ -16,7 +16,8 @@ function validOrigin(value) {
 
 function accessToken(inbox) {
   const token = inbox?.accessToken;
-  if (!token) throw new GetTempError('inbox_capability_required', 'Inbox access token is required.');
+  if (!token)
+    throw new GetTempError('inbox_capability_required', 'Inbox access token is required.');
   return token;
 }
 
@@ -49,7 +50,7 @@ export class GetTempClient {
         method: options.method ?? 'GET',
         headers,
         body: options.body === undefined ? undefined : JSON.stringify(options.body),
-        signal: options.signal,
+        signal: anySignal([options.signal, AbortSignal.timeout(5_000)]),
       });
     } catch (error) {
       throw asGetTempError(error);
@@ -57,7 +58,14 @@ export class GetTempClient {
 
     if (options.expected?.includes(response.status)) {
       if (response.status === 204) return null;
-      return response.json();
+      try {
+        return await response.json();
+      } catch {
+        throw new GetTempError(
+          'invalid_response',
+          'gettemp.email returned an invalid JSON response.',
+        );
+      }
     }
 
     let code = 'request_failed';
@@ -76,7 +84,10 @@ export class GetTempClient {
   }
 
   status(options = {}) {
-    return this.request('/v1/developer/status', { expected: [200], signal: options.signal });
+    return this.request('/v1/developer/status', {
+      expected: [200],
+      signal: options.signal,
+    });
   }
 
   createInbox(options = {}) {
@@ -114,9 +125,29 @@ export class GetTempClient {
   async waitForMessage(inbox, options = {}) {
     const timeoutMs = options.timeoutMs ?? 45_000;
     const intervalMs = options.intervalMs ?? 1_000;
+    if (
+      !Number.isSafeInteger(timeoutMs) ||
+      timeoutMs < 0 ||
+      !Number.isSafeInteger(intervalMs) ||
+      intervalMs <= 0
+    )
+      throw new GetTempError(
+        'invalid_input',
+        'Polling timeout and interval must be finite non-negative/positive integers.',
+      );
     const deadline = Date.now() + timeoutMs;
+    const timeout = AbortSignal.timeout(timeoutMs);
+    const signal = anySignal([options.signal, timeout]);
     while (Date.now() < deadline) {
-      const messages = await this.listMessages(inbox, { signal: options.signal });
+      let messages;
+      try {
+        signal.throwIfAborted();
+        messages = await this.listMessages(inbox, { signal });
+      } catch (error) {
+        if (timeout.aborted && !options.signal?.aborted) break;
+        throw error;
+      }
+      if (Date.now() >= deadline) break;
       const match = messages.find((message) => {
         if (options.subjectIncludes && !message.subject?.includes(options.subjectIncludes))
           return false;
@@ -125,7 +156,14 @@ export class GetTempClient {
         return true;
       });
       if (match) return match;
-      await sleep(Math.min(intervalMs, Math.max(0, deadline - Date.now())));
+      try {
+        await sleep(Math.min(intervalMs, Math.max(0, deadline - Date.now())), undefined, {
+          signal,
+        });
+      } catch (error) {
+        if (timeout.aborted && !options.signal?.aborted) break;
+        throw asGetTempError(error);
+      }
     }
     throw new GetTempError('message_timeout', 'No matching message arrived before the deadline.');
   }
@@ -157,7 +195,10 @@ export class GetTempClient {
   async doctor(options = {}) {
     const status = await this.status(options);
     if (options.statusOnly) return { ok: true, status: 'authenticated', plan: status.plan };
-    const inbox = await this.createInbox({ ttlMinutes: 5, signal: options.signal });
+    const inbox = await this.createInbox({
+      ttlMinutes: 5,
+      signal: options.signal,
+    });
     try {
       return { ok: true, status: 'create_delete_passed', plan: status.plan };
     } finally {

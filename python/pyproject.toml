@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "gettemp-email-testing"
-version = "0.2.0"
+version = "0.2.1"
 description = "Disposable inbox helpers and pytest fixtures for email verification testing."
 readme = "README.md"
 requires-python = ">=3.10"
