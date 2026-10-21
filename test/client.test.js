@@ -29,6 +29,7 @@ test('client separates account authorization from inbox capability', async () =>
   assert.equal(headers.get('authorization'), 'Bearer gte_live_test_value');
   assert.equal(headers.get('x-inbox-access-token'), 'capability-token');
   assert.doesNotMatch(calls[0].url, /capability-token|gte_live_test_value/);
+  assert.equal(calls[0].options.redirect, 'error');
 });
 
 test('request errors expose category and status but never response body', async () => {
@@ -163,4 +164,37 @@ test('caller abort interrupts the polling sleep', async () => {
     }),
   );
   assert.ok(Date.now() - started < 1_000);
+});
+
+test('explicit low-frequency polling stays within the eight-request example budget', async () => {
+  // Scale 45s/10s down to 450ms/100ms. No live API or mail is used.
+  const methods = [];
+  let lists = 0;
+  const client = new GetTempClient({
+    apiKey: 'synthetic',
+    fetch: async (url, options) => {
+      methods.push(options.method);
+      if (options.method === 'POST') return json(inbox, 201);
+      if (options.method === 'DELETE') return new Response(null, { status: 204 });
+      if (url.endsWith('/messages')) {
+        lists++;
+        return json(lists === 5 ? [{ id: 'message', subject: 'Verify' }] : []);
+      }
+      return json({ id: 'message', safe_links: [] });
+    },
+  });
+  try {
+    await client.withInbox(async (created) => {
+      const summary = await client.waitForMessage(created, {
+        timeoutMs: 450, intervalMs: 100, subjectIncludes: 'Verify',
+      });
+      await client.readMessage(created, summary.id);
+    }, { ttlMinutes: 5 });
+  } catch (error) {
+    // On an extremely slow CI host, fewer polls may fit; never spend extra calls.
+    assert.equal(error.category, 'message_timeout');
+  }
+  assert.ok(lists > 0 && lists <= 5);
+  assert.ok(methods.length <= 8);
+  assert.equal(methods.at(-1), 'DELETE');
 });

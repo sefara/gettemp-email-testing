@@ -9,7 +9,7 @@ def test_email_verification(page, gettemp_client, gettemp_inbox):
     page.get_by_role("button", name="Sign up").click()
 
     summary = gettemp_client.wait_for_message(
-        gettemp_inbox, subject_includes="Verify", timeout_seconds=45
+        gettemp_inbox, subject_includes="Verify", timeout_seconds=45, interval_seconds=10
     )
     message = gettemp_client.read_message(gettemp_inbox, summary["id"])
     href = verification_url(

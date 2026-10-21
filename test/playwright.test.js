@@ -129,6 +129,7 @@ test('adapter awaits body bytes, releases APIResponse and bounds native request 
     {
       fetch: async (_, options) => {
         assert.equal(options.timeout, 5_000);
+        assert.equal(options.maxRedirects, 0);
         return {
           status: () => 201,
           headers: () => ({}),
@@ -146,4 +147,18 @@ test('adapter awaits body bytes, releases APIResponse and bounds native request 
   );
   assert.deepEqual(await mail.client.createInbox(), inbox);
   assert.equal(disposed, true);
+});
+
+test('real adapter never forwards account or inbox credentials through a redirect', async (t) => {
+  const { mail, calls } = await fixture(t, (call, res) => {
+    if (call.path === '/credential-trap') {
+      res.end('[]');
+      return;
+    }
+    res.writeHead(302, { location: '/credential-trap' });
+    res.end();
+  });
+  await assert.rejects(mail.client.listMessages(inbox), { status: 302 });
+  assert.equal(calls.length, 1);
+  assert.notEqual(calls[0].path, '/credential-trap');
 });

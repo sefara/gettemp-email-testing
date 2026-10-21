@@ -38,6 +38,8 @@ test('init writes no secret and is idempotent', async (t) => {
   assert.match(example, /getByTestId\('verified-email'\)\)\.toHaveText\(inbox.address\)/);
   assert.match(example, /destination.origin !== target.origin/);
   assert.match(example, /trace: 'off'/);
+  assert.match(example, /timeoutMs: 45_000/);
+  assert.match(example, /intervalMs: 10_000/);
   assert.match(example, /test.skip\(/);
   assert.match(example, /from '.\/helpers\/gettemp-email.js'/);
   const second = await initProject({ directory, write: true });

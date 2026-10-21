@@ -48,6 +48,7 @@
   "scripts": {
     "test": "node --test",
     "test:browser": "node scripts/browser-example-regression.mjs",
+    "test:package": "node scripts/package-smoke.mjs",
     "test:live": "node scripts/live-playwright-controlled-flow.mjs",
     "test:coverage": "node --test --experimental-test-coverage",
     "check": "node --check src/cli.js && node --check src/client.js && node --check src/helpers.js && node --check src/init.js && node --check scripts/live-playwright-controlled-flow.mjs && npm test",

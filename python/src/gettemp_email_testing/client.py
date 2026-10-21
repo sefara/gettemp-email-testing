@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import re
 import time
@@ -10,7 +11,7 @@ from dataclasses import dataclass
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlsplit
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 DEFAULT_API_ORIGIN = "https://api.gettemp.email"
 Transport = Callable[
@@ -58,6 +59,12 @@ def _origin(value: str) -> str:
     return f"{parsed.scheme}://{parsed.netloc}"
 
 
+class _NoRedirects(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        # An API response must not forward account/inbox credentials to another endpoint.
+        return None
+
+
 def _default_transport(
     method: str,
     url: str,
@@ -67,7 +74,7 @@ def _default_transport(
 ) -> tuple[int, Mapping[str, str], bytes]:
     request = Request(url, data=body, headers=dict(headers), method=method)
     try:
-        with urlopen(request, timeout=timeout) as response:
+        with build_opener(_NoRedirects()).open(request, timeout=timeout) as response:
             return response.status, dict(response.headers.items()), response.read()
     except HTTPError as error:
         return error.code, dict(error.headers.items()), error.read()
@@ -102,6 +109,13 @@ class GetTempClient:
                 "authentication_required", "Set GETTEMP_API_KEY or pass api_key."
             )
         self.api_origin = _origin(api_origin)
+        if (
+            isinstance(timeout_seconds, bool)
+            or not isinstance(timeout_seconds, (int, float))
+            or not math.isfinite(timeout_seconds)
+            or timeout_seconds <= 0
+        ):
+            raise GetTempError("invalid_input", "Request timeout must be finite and positive.")
         self.timeout_seconds = timeout_seconds
         self._transport = transport or _default_transport
 
@@ -113,6 +127,7 @@ class GetTempClient:
         body: Mapping[str, object] | None = None,
         inbox: Mapping[str, object] | None = None,
         expected: tuple[int, ...] = (200,),
+        timeout_seconds: float | None = None,
     ) -> Any:
         headers = {
             "Authorization": f"Bearer {self._api_key}",
@@ -129,7 +144,8 @@ class GetTempClient:
         if encoded is not None:
             headers["Content-Type"] = "application/json"
         status, response_headers, raw = self._transport(
-            method, f"{self.api_origin}{path}", headers, encoded, self.timeout_seconds
+            method, f"{self.api_origin}{path}", headers, encoded,
+            self.timeout_seconds if timeout_seconds is None else timeout_seconds,
         )
         if status in expected:
             if status == 204 or not raw:
@@ -200,9 +216,19 @@ class GetTempClient:
             expected=(201,),
         )
 
-    def list_messages(self, inbox: Mapping[str, object]) -> list[Mapping[str, object]]:
+    def list_messages(
+        self, inbox: Mapping[str, object], *, timeout_seconds: float | None = None
+    ) -> list[Mapping[str, object]]:
+        if timeout_seconds is not None and (
+            isinstance(timeout_seconds, bool)
+            or not isinstance(timeout_seconds, (int, float))
+            or not math.isfinite(timeout_seconds)
+            or timeout_seconds <= 0
+        ):
+            raise GetTempError("invalid_input", "Request timeout must be finite and positive.")
         result = self._request(
-            f"/v1/developer/inboxes/{self._inbox_id(inbox)}/messages", inbox=inbox
+            f"/v1/developer/inboxes/{self._inbox_id(inbox)}/messages", inbox=inbox,
+            timeout_seconds=timeout_seconds,
         )
         if not isinstance(result, list):
             raise GetTempError("invalid_response", "Message listing was not an array.")
@@ -232,9 +258,31 @@ class GetTempClient:
         timeout_seconds: float = 45,
         interval_seconds: float = 1,
     ) -> Mapping[str, object]:
+        for value, allow_zero in ((timeout_seconds, True), (interval_seconds, False)):
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+                or value < 0
+                or (value == 0 and not allow_zero)
+            ):
+                raise GetTempError("invalid_input", "Polling bounds must be finite and valid.")
         deadline = time.monotonic() + timeout_seconds
         while time.monotonic() < deadline:
-            for message in self.list_messages(inbox):
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            try:
+                messages = self.list_messages(
+                    inbox, timeout_seconds=min(self.timeout_seconds, remaining)
+                )
+            except GetTempError as error:
+                if error.category == "network_error" and time.monotonic() >= deadline:
+                    break
+                raise
+            if time.monotonic() >= deadline:
+                break
+            for message in messages:
                 if subject_includes and subject_includes not in str(
                     message.get("subject", "")
                 ):

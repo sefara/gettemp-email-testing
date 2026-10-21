@@ -21,6 +21,7 @@ test.skip('email verification for an application you are authorized to test', as
       const summary = await client.waitForMessage(inbox, {
         subjectIncludes: 'Verify',
         timeoutMs: 45_000,
+        intervalMs: 10_000,
       });
       const message = await client.readMessage(inbox, summary.id);
       const href = mail.verificationUrl(message, {

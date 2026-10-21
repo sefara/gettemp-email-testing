@@ -50,6 +50,7 @@ export class GetTempClient {
         method: options.method ?? 'GET',
         headers,
         body: options.body === undefined ? undefined : JSON.stringify(options.body),
+        redirect: 'error',
         signal: anySignal([options.signal, AbortSignal.timeout(5_000)]),
       });
     } catch (error) {

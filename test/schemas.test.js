@@ -33,7 +33,11 @@ test('doctor contract cannot contain inbox or message data', async () => {
 test('manifest points to exact tagged JavaScript and Python installations', async () => {
   const manifest = JSON.parse(await readFile('integration-manifest.json', 'utf8'));
   assert.deepEqual(manifest.supported, ['playwright', 'pytest']);
-  assert.match(manifest.install, /#v0\.2\.0$/);
-  assert.match(manifest.python.install, /@v0\.2\.0#subdirectory=python$/);
+  const { version } = JSON.parse(await readFile('package.json', 'utf8'));
+  assert.ok(manifest.install.endsWith(`#v${version}`));
+  assert.ok(manifest.python.install.includes(`@v${version}#subdirectory=python`));
+  assert.ok(manifest.python.install.includes('[pytest]'));
+  const pyproject = await readFile('python/pyproject.toml', 'utf8');
+  assert.ok(pyproject.includes(`version = "${version}"`));
   assert.equal(manifest.telemetry, 'none');
 });

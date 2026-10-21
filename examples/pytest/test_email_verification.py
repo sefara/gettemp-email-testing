@@ -29,6 +29,7 @@ def test_new_user_can_verify_email(
         gettemp_inbox,
         subject_includes="Verify",
         timeout_seconds=45,
+        interval_seconds=10,
     )
     message = gettemp_client.read_message(gettemp_inbox, summary["id"])
     href = verification_url(

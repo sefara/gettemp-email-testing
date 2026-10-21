@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import json
 import unittest
+from unittest.mock import patch
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from threading import Thread
 from typing import Any
 
 from gettemp_email_testing import GetTempClient, GetTempError
@@ -105,6 +108,68 @@ class ClientTests(unittest.TestCase):
         ):
             with self.subTest(origin=origin), self.assertRaises(GetTempError):
                 GetTempClient(api_key="x", api_origin=origin)
+
+    def test_quota_aware_example_uses_at_most_eight_calls(self):
+        clock = [0.0]
+        transport = FakeTransport([
+            (201, {}, INBOX),
+            *[(200, {}, []) for _ in range(4)],
+            (200, {}, [{"id": "message", "subject": "Verify"}]),
+            (200, {}, {"id": "message"}),
+            (204, {}, b""),
+        ])
+        client = GetTempClient(api_key="synthetic", transport=transport)
+        with (
+            patch("gettemp_email_testing.client.time.monotonic", side_effect=lambda: clock[0]),
+            patch("gettemp_email_testing.client.time.sleep", side_effect=lambda n: clock.__setitem__(0, clock[0] + n)),
+            client.temporary_inbox() as inbox,
+        ):
+            summary = client.wait_for_message(inbox, timeout_seconds=45, interval_seconds=10)
+            client.read_message(inbox, summary["id"])
+        self.assertEqual(len(transport.calls), 8)
+        self.assertEqual(clock[0], 40)
+        self.assertEqual(transport.calls[5][-1], 5)
+
+    def test_polling_rejects_invalid_intervals_and_a_late_response(self):
+        client = GetTempClient(api_key="synthetic", transport=FakeTransport([]))
+        for value in [0, -1, float("inf"), float("nan"), True]:
+            with self.subTest(value=value), self.assertRaises(GetTempError) as raised:
+                client.wait_for_message(INBOX, interval_seconds=value)
+            self.assertEqual(raised.exception.category, "invalid_input")
+        transport = FakeTransport([(200, {}, [{"id": "late"}])])
+        client = GetTempClient(api_key="synthetic", transport=transport)
+        with patch("gettemp_email_testing.client.time.monotonic", side_effect=[0, 0, 0, 46]):
+            with self.assertRaises(GetTempError) as raised:
+                client.wait_for_message(INBOX, timeout_seconds=45, interval_seconds=10)
+        self.assertEqual(raised.exception.category, "message_timeout")
+
+    def test_real_transport_does_not_forward_credentials_on_redirect(self):
+        paths = []
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                paths.append(self.path)
+                self.send_response(302)
+                self.send_header("Location", "/credential-trap")
+                self.end_headers()
+
+            def log_message(self, *args):
+                pass
+
+        server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        thread = Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            client = GetTempClient(api_key="synthetic", api_origin=f"http://127.0.0.1:{server.server_port}")
+            with self.assertRaises(GetTempError) as raised:
+                client.list_messages(INBOX)
+            self.assertEqual(raised.exception.status, 302)
+            self.assertEqual(len(paths), 1)
+            self.assertNotIn("/credential-trap", paths)
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join()
 
 
 if __name__ == "__main__":

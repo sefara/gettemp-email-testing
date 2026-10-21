@@ -13,6 +13,7 @@ export function createPlaywrightInbox(request, options = {}) {
           headers: Object.fromEntries(new Headers(init.headers).entries()),
           data: init.body ? JSON.parse(init.body) : undefined,
           failOnStatusCode: false,
+          maxRedirects: 0,
           timeout: 5_000,
         });
         try {
